@@ -15,10 +15,10 @@
     infillSqftPerBag: 25,
     coloredInfillPerBag: 25,           // charged on top, outside the margin
     materials: 0.44,                   // $/sq ft: nails, seam tape, weed barrier
-    equipment: 500,                    // $ per job
+    equipment: 0.625,                  // $/sq ft (was $500 flat; a flat fee made 250 sq ft jobs too high)
     edgingPerFoot: { none: 0, wood: 3, metal: 4, paver: 5 },           // CONFIRM, outside the margin
     cupPackage: 1200,                  // CONFIRM, outside the margin
-    minimum:   { lawn: 3000, green: 4250 },                            // CONFIRM
+    minimum:   { lawn: 2500, green: 4250 },                            // CONFIRM
     slope:     { mild: [0, 0], steep: [0.10, 0.25] },                  // % of price
     clay:      [0.50, 1.50],                                           // $/sq ft added to price
     wheelbarrow: [0.15, 0.30],                                         // % added to labor
@@ -44,7 +44,7 @@
       (cfg.sodCut ? sqft * m.sodDisposal : 0) +
       bags * m.infillBagCost +
       sqft * m.materials +
-      m.equipment;
+      sqft * m.equipment;
 
     const addOns =
       feet * m.edgingPerFoot[cfg.edging] +
