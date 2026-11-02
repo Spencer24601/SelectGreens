@@ -360,7 +360,7 @@
     <div class="section-head" data-reveal>
       <span class="kicker">Instant &amp; direct</span>
       <h2>Get your estimate.</h2>
-      <p>Configure your project below, then enter your details to unlock your number. Some line items below are still placeholder rates — swap in your real pricing whenever you're ready.</p>
+      <p>Configure your project below, then enter your details to unlock your number.</p>
     </div>
 
     <div class="est-panel" data-reveal>
@@ -404,11 +404,36 @@
             <option value="wood">Wood border</option>
           </select>
         </div>
+        <div class="field" id="edgingFeetField" style="display:none;">
+          <label>Edging length (linear feet, optional)</label>
+          <input type="number" id="edgingFeet" min="0" max="2000" placeholder="Leave blank and we'll estimate it">
+        </div>
         <div class="field">
           <label>Infill</label>
           <select id="infill">
             <option value="silica">Regular silica sand</option>
             <option value="green">Colored infill (+$25/bag)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Slope</label>
+          <select id="slope">
+            <option value="mild">Flat or mild slope</option>
+            <option value="steep">Steep slope</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Soil</label>
+          <select id="soil">
+            <option value="normal">Normal soil</option>
+            <option value="clay">Heavy clay</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Access to the yard</label>
+          <select id="access">
+            <option value="open">Open access (gate or driveway)</option>
+            <option value="wheelbarrow">Wheelbarrow only</option>
           </select>
         </div>
         <div class="field toggle-row">
@@ -429,7 +454,7 @@
         </div>
         <div id="estUnlocked" style="display:none;">
           <div class="est-range" id="estRange">$0–0</div>
-          <p class="note">Rough order-of-magnitude estimate. Final price is locked after a site measure.</p>
+          <p class="note">Rough estimate. Final price is locked after a site measure. Putting greens vary most with contour, so treat a green estimate as a starting point.</p>
           <div class="est-breakdown" id="estBreakdown"></div>
         </div>
       </div>
@@ -446,6 +471,7 @@
         <p class="hp-field" style="display:none;"><label>Don't fill this out: <input name="bot-field"></label></p>
         <input type="hidden" name="estimated_range" id="estimatedRangeField">
         <input type="hidden" name="project_config" id="projectConfigField">
+        <input type="hidden" name="estimate_summary" id="estimateSummaryField">
         <div class="quote-grid">
           <div class="field"><label>Name</label><input type="text" name="name" required></div>
           <div class="field"><label>Phone</label><input type="tel" name="phone" required></div>
@@ -550,128 +576,8 @@ document.querySelectorAll('.tier-tab').forEach(btn => {
   });
 });
 
-// Estimator (Estimate page only) — guarded so it's a no-op on other pages
-const projType = document.getElementById('projType');
-if (projType) {
-  const turfTiers = {
-    lawn: [
-      { value: 'standard', label: 'Standard — Trek 50 ($2.00/sq ft)', rate: 2.00 },
-      { value: 'premium',  label: 'Premium — Arizona Pro ($3.00/sq ft)', rate: 3.00 },
-      { value: 'platinum', label: 'Platinum — Natural Fusion Patriot ($7.00+/sq ft)', rate: 7.00 }
-    ],
-    green: [
-      { value: 'standard', label: 'Standard Green — placeholder ($X.XX/sq ft)', rate: 9.50 },
-      { value: 'premium',  label: 'Premium Green — placeholder ($X.XX/sq ft)', rate: 12.50 }
-    ]
-  };
-  // Placeholder cost deltas — swap in real numbers when Cameron has them
-  const baseDepthAdd  = { standard: 0, thick: 0.50, max: 1.25 };       // $/sq ft, road base depth
-  const edgingAdd      = { none: 0, paver: 900, metal: 550, wood: 700 }; // flat $ add-on
-  const sodCutAdd      = { nonsod: 0, sodcut: 0.35 };                    // $/sq ft
-  const infillAdd      = { silica: 0, green: 25 };                       // placeholder flat $, real cost is $25/bag — bag coverage TBD
-  const cupPackagePrice = 1200;
-  const maintProgramPrice = 45; // placeholder monthly rate, shown as a note not added to the one-time total
-
-  const sqftRange = document.getElementById('sqftRange');
-  const sqftLabel = document.getElementById('sqftLabel');
-  const turfTier = document.getElementById('turfTier');
-  const baseTier = document.getElementById('baseTier');
-  const sodCut = document.getElementById('sodCut');
-  const edging = document.getElementById('edging');
-  const infill = document.getElementById('infill');
-  const cupPackage = document.getElementById('cupPackage');
-  const maintProgram = document.getElementById('maintProgram');
-  const estRange = document.getElementById('estRange');
-  const estBreakdown = document.getElementById('estBreakdown');
-
-  function populateTurfTiers(){
-    const opts = turfTiers[projType.value];
-    turfTier.innerHTML = opts.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
-  }
-
-  function currentConfig(){
-    const sqft = parseInt(sqftRange.value, 10);
-    const type = projType.value;
-    const tierOpt = turfTiers[type].find(o => o.value === turfTier.value) || turfTiers[type][0];
-    return { sqft, type, tierOpt };
-  }
-
-  function calc(){
-    const sqft = parseInt(sqftRange.value, 10);
-    sqftLabel.textContent = sqft;
-    const { type, tierOpt } = currentConfig();
-    const rate = tierOpt.rate + baseDepthAdd[baseTier.value] + sodCutAdd[sodCut.value];
-    const low = sqft * rate;
-    const high = sqft * (rate + 0.5);
-
-    let addOn = edgingAdd[edging.value] + (infillAdd[infill.value]);
-    if(type === 'green' && cupPackage.checked){ addOn += cupPackagePrice; }
-
-    const lowTotal = Math.round(low + addOn);
-    const highTotal = Math.round(high + addOn);
-    estRange.textContent = `$${lowTotal.toLocaleString()}–${highTotal.toLocaleString()}`;
-
-    estBreakdown.innerHTML = `
-      <div><span>${sqft} sq ft × ~$${rate.toFixed(2)}/sq ft</span><span>$${Math.round(low).toLocaleString()}+</span></div>
-      <div><span>Turf tier</span><span>${tierOpt.label}</span></div>
-      <div><span>Road base</span><span>${baseTier.options[baseTier.selectedIndex].text.split(' — ')[0]}</span></div>
-      <div><span>Edging</span><span>${edging.options[edging.selectedIndex].text}</span></div>
-      <div><span>Infill</span><span>${infill.options[infill.selectedIndex].text}</span></div>
-      ${cupPackage.checked ? `<div><span>Cup + fringe package</span><span>+$${cupPackagePrice.toLocaleString()}</span></div>` : ''}
-      ${maintProgram.checked ? `<div><span>Maintenance program</span><span>~$${maintProgramPrice}/mo (billed separately)</span></div>` : ''}
-    `;
-  }
-
-  populateTurfTiers();
-  projType.addEventListener('change', () => { populateTurfTiers(); calc(); });
-  [sqftRange, turfTier, baseTier, sodCut, edging, infill, cupPackage, maintProgram].forEach(el => el.addEventListener('input', calc));
-  calc();
-
-  // Quote form flow — estimate stays locked until lead form is submitted
-  const openQuoteBtn = document.getElementById('openQuoteBtn');
-  const quoteForm = document.getElementById('quoteForm');
-  const leadForm = document.getElementById('leadForm');
-  const confirmPanel = document.getElementById('confirmPanel');
-  const estLocked = document.getElementById('estLocked');
-  const estUnlocked = document.getElementById('estUnlocked');
-
-  openQuoteBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    quoteForm.classList.add('open');
-    quoteForm.scrollIntoView({ behavior:'smooth', block:'start' });
-  });
-
-  leadForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    calc();
-    document.getElementById('estimatedRangeField').value = estRange.textContent;
-    const { sqft, type, tierOpt } = currentConfig();
-    document.getElementById('projectConfigField').value =
-      `Type: ${type}, Tier: ${tierOpt.label}, Sqft: ${sqft}, Base: ${baseTier.value}, Sod cut: ${sodCut.value}, Edging: ${edging.value}, Infill: ${infill.value}, Cup package: ${cupPackage.checked}, Maintenance: ${maintProgram.checked}`;
-
-    const formData = new FormData(leadForm);
-    fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(formData).toString()
-    })
-    .then(() => {
-      leadForm.style.display = 'none';
-      confirmPanel.classList.add('open');
-      estLocked.style.display = 'none';
-      estUnlocked.style.display = 'block';
-    })
-    .catch(() => {
-      // Falls back gracefully if not yet deployed on Netlify (e.g. opened as a local file)
-      leadForm.style.display = 'none';
-      confirmPanel.classList.add('open');
-      confirmPanel.querySelector('p').textContent = 'Saved locally — once this site is deployed on Netlify, submissions will land in your dashboard automatically.';
-      estLocked.style.display = 'none';
-      estUnlocked.style.display = 'block';
-    });
-  });
-}
 
 </script>
+<script src="estimator.js"></script>
 </body>
 </html>
