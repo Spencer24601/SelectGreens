@@ -436,9 +436,9 @@
             <option value="wheelbarrow">Wheelbarrow only</option>
           </select>
         </div>
-        <div class="field toggle-row">
-          <input type="checkbox" id="cupPackage">
-          <label for="cupPackage">Add cup + fringe package (putting greens)</label>
+        <div class="field" id="cupsField" style="display:none;">
+          <label>Number of cups (putting greens; fringe is quoted separately)</label>
+          <input type="number" id="cups" min="0" max="18" value="1">
         </div>
         <div class="field toggle-row">
           <input type="checkbox" id="maintProgram">

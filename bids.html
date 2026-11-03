@@ -85,7 +85,7 @@
             <div class="check"><input type="checkbox" id="f_colored"><label for="f_colored">Colored infill</label></div>
             <div class="check"><input type="checkbox" id="f_clay"><label for="f_clay">Clay soil</label></div>
             <div class="check"><input type="checkbox" id="f_barrow"><label for="f_barrow">Wheelbarrow-only access</label></div>
-            <div class="check"><input type="checkbox" id="f_cup"><label for="f_cup">Cup + fringe package (green)</label></div>
+            <div><label>Cups (green)</label><input id="f_cups" type="number" min="0" value="0"></div>
             <div><label>Status</label>
               <select id="f_status"><option value="sent">Sent</option><option value="won">Won</option><option value="lost">Lost</option></select></div>
           </div>
@@ -169,7 +169,7 @@
       type: $('f_type').value, tier: $('f_tier').value, sqft: parseInt($('f_sqft').value, 10) || 0, base: $('f_base').value,
       sodCut: $('f_sod').checked, edging: $('f_edging').value, edgingFeet: parseInt($('f_edgingft').value, 10) || 0,
       colored: $('f_colored').checked, slope: $('f_slope').value, clay: $('f_clay').checked,
-      wheelbarrow: $('f_barrow').checked, cup: $('f_cup').checked
+      wheelbarrow: $('f_barrow').checked, cups: Math.max(0, parseInt($('f_cups').value, 10) || 0)
     };
   }
   function recalc() {
@@ -199,7 +199,7 @@
     $('c_note').textContent = (inRange ? 'Bidder is inside the model range' : 'Bidder is outside the model range');
   }
   ['f_type'].forEach((id) => $(id).addEventListener('change', () => { populateTiers(); recalc(); }));
-  ['f_tier', 'f_sqft', 'f_base', 'f_edging', 'f_edgingft', 'f_slope', 'f_sod', 'f_colored', 'f_clay', 'f_barrow', 'f_cup']
+  ['f_tier', 'f_sqft', 'f_base', 'f_edging', 'f_edgingft', 'f_slope', 'f_sod', 'f_colored', 'f_clay', 'f_barrow', 'f_cups']
     .forEach((id) => $(id).addEventListener('input', recalc));
   $('f_price').addEventListener('input', diff);
 
@@ -212,7 +212,7 @@
       customer_name: $('f_name').value.trim() || null, customer_contact: $('f_contact').value.trim() || null,
       address: $('f_address').value.trim() || null, project_type: cfg.type, sqft: cfg.sqft, turf_tier: cfg.tier,
       base_tier: cfg.base, sod_cut: cfg.sodCut, edging: cfg.edging, edging_ft: cfg.edging === 'none' ? null : (cfg.edgingFeet || current.edgingFeet),
-      colored_infill: cfg.colored, slope: cfg.slope, clay: cfg.clay, wheelbarrow: cfg.wheelbarrow, cup_package: cfg.cup,
+      colored_infill: cfg.colored, slope: cfg.slope, clay: cfg.clay, wheelbarrow: cfg.wheelbarrow, cups: cfg.type === 'green' ? cfg.cups : 0,
       notes: $('f_notes').value.trim() || null, cost_total: current.costTotal, margin: current.margin, bid_price: price,
       model_low: current.low, model_high: current.high, status: $('f_status').value
     };

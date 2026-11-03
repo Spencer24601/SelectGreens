@@ -11,7 +11,7 @@
     return r;
   }
 
-  // cfg: { type, tier, sqft, base, sodCut, edging, edgingFeet, colored, slope, clay, wheelbarrow, cup }
+  // cfg: { type, tier, sqft, base, sodCut, edging, edgingFeet, colored, slope, clay, wheelbarrow, cups }
   function priceBid(cfg, r) {
     const sqft = cfg.sqft, type = cfg.type, m = r.margin;
     const bags = Math.ceil(sqft / r.infill_sqft_per_bag);
@@ -31,7 +31,7 @@
 
     const edgingAdd = feet * (cfg.edging === 'none' ? 0 : r['edging_' + cfg.edging]);
     const coloredAdd = cfg.colored ? bags * r.colored_infill_per_bag : 0;
-    const cupAdd = type === 'green' && cfg.cup ? r.cup_package : 0;
+    const cupAdd = type === 'green' ? (cfg.cups || 0) * r.cup_price : 0;
     const addOns = edgingAdd + coloredAdd + cupAdd;
 
     const slope = cfg.slope === 'steep' ? [r.slope_steep_low, r.slope_steep_high] : [0, 0];
@@ -75,7 +75,7 @@
     }
     if (edgingAdd > 0) lines.push({ kind: 'edging', description: 'Edging (' + cfg.edging + ')', quantity: feet, unit: 'ft', cost: null, price: round2(edgingAdd) });
     if (coloredAdd > 0) lines.push({ kind: 'addon', description: 'Colored infill', quantity: bags, unit: 'bags', cost: null, price: round2(coloredAdd) });
-    if (cupAdd > 0) lines.push({ kind: 'addon', description: 'Cup + fringe package', quantity: 1, unit: 'pkg', cost: null, price: round2(cupAdd) });
+    if (cupAdd > 0) lines.push({ kind: 'addon', description: 'Cups', quantity: cfg.cups, unit: 'cups', cost: null, price: round2(cupAdd) });
 
     return {
       lines: lines, costTotal: round2(costTotal), margin: m, edgingFeet: feet,

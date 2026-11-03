@@ -17,7 +17,7 @@
     materials: 0.44,                   // $/sq ft: nails, seam tape, weed barrier
     equipment: 0.625,                  // $/sq ft (was $500 flat; a flat fee made 250 sq ft jobs too high)
     edgingPerFoot: { none: 0, wood: 3, metal: 4, paver: 5 },           // CONFIRM, outside the margin
-    cupPackage: 1200,                  // CONFIRM, outside the margin
+    cupPrice: 250,                     // $ per cup, outside the margin (bidder: $150-$300 each)
     minimum:   { lawn: 2500, green: 4250 },                            // CONFIRM
     slope:     { mild: [0, 0], steep: [0.10, 0.25] },                  // % of price
     clay:      [0.50, 1.50],                                           // $/sq ft added to price
@@ -29,7 +29,7 @@
   const roundDown = (n) => Math.floor(n / 50) * 50;
   const roundUp = (n) => Math.ceil(n / 50) * 50;
 
-  // cfg: { type, tier, sqft, base, sodCut, edging, edgingFeet, colored, slope, clay, wheelbarrow, cup }
+  // cfg: { type, tier, sqft, base, sodCut, edging, edgingFeet, colored, slope, clay, wheelbarrow, cups }
   function estimate(cfg, m) {
     m = m || MODEL;
     const sqft = cfg.sqft;
@@ -49,7 +49,7 @@
     const addOns =
       feet * m.edgingPerFoot[cfg.edging] +
       (cfg.colored ? bags * m.coloredInfillPerBag : 0) +
-      (type === 'green' && cfg.cup ? m.cupPackage : 0);
+      (type === 'green' ? (cfg.cups || 0) * m.cupPrice : 0);
 
     // idx 0 = low end of every stated range, idx 1 = high end
     const scenario = (i) => {
@@ -93,7 +93,7 @@
   const sqftRange = $('sqftRange'), turfTier = $('turfTier'), baseTier = $('baseTier'), sodCut = $('sodCut'),
         edging = $('edging'), edgingFeet = $('edgingFeet'), edgingFeetField = $('edgingFeetField'),
         infill = $('infill'), slope = $('slope'), soil = $('soil'), access = $('access'),
-        cupPackage = $('cupPackage'), maintProgram = $('maintProgram'),
+        cups = $('cups'), cupsField = $('cupsField'), maintProgram = $('maintProgram'),
         estRange = $('estRange'), estBreakdown = $('estBreakdown');
   const label = (sel) => sel.options[sel.selectedIndex].text.split(' — ')[0];
   const money = (n) => '$' + n.toLocaleString('en-US');
@@ -103,7 +103,7 @@
       type: projType.value, tier: turfTier.value, sqft: parseInt(sqftRange.value, 10), base: baseTier.value,
       sodCut: sodCut.value === 'sodcut', edging: edging.value, edgingFeet: parseInt(edgingFeet.value, 10) || 0,
       colored: infill.value === 'green', slope: slope.value, clay: soil.value === 'clay',
-      wheelbarrow: access.value === 'wheelbarrow', cup: cupPackage.checked
+      wheelbarrow: access.value === 'wheelbarrow', cups: projType.value === 'green' ? Math.max(0, parseInt(cups.value, 10) || 0) : 0
     };
   }
 
@@ -119,7 +119,10 @@
     if (cfg.slope === 'steep') lines.push(['Slope', 'Steep']);
     if (cfg.clay) lines.push(['Soil', 'Clay']);
     if (cfg.wheelbarrow) lines.push(['Access', 'Wheelbarrow only']);
-    if (cfg.type === 'green' && cfg.cup) lines.push(['Cup + fringe package', 'Included']);
+    if (cfg.type === 'green') {
+      if (cfg.cups > 0) lines.push(['Cups', String(cfg.cups)]);
+      lines.push(['Fringe', 'Quoted separately']);
+    }
     if (maintProgram.checked) lines.push(['Maintenance program', 'Quoted separately']);
     return lines;
   }
@@ -127,6 +130,7 @@
   function calc() {
     $('sqftLabel').textContent = sqftRange.value;
     edgingFeetField.style.display = edging.value === 'none' ? 'none' : '';
+    cupsField.style.display = projType.value === 'green' ? '' : 'none';
     const cfg = config();
     const r = estimate(cfg);
     estRange.textContent = money(r.low) + '–' + r.high.toLocaleString('en-US');
@@ -141,7 +145,7 @@
 
   populateTiers();
   projType.addEventListener('change', () => { populateTiers(); calc(); });
-  [sqftRange, turfTier, baseTier, sodCut, edging, edgingFeet, infill, slope, soil, access, cupPackage, maintProgram]
+  [sqftRange, turfTier, baseTier, sodCut, edging, edgingFeet, infill, slope, soil, access, cups, maintProgram]
     .forEach((el) => el.addEventListener('input', calc));
   calc();
 
