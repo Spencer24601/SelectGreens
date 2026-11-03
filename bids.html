@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Bids — Select Greens</title>
+<style>
+  :root{ --bg:#0a0d0b; --bg-alt:#0f1310; --bg-raise:#151a15; --ink:#edeae2; --ink-dim:#8b948c;
+         --green:#2f6b45; --green-bright:#4cbe72; --sand:#c9a66b; --line:rgba(237,234,226,0.14); --bad:#e0775f; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,'Segoe UI',sans-serif; line-height:1.5; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+  h1{ font-size:1.6rem; } h2{ font-size:1.15rem; margin-bottom:12px; }
+  .top{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+  .dim{ color:var(--ink-dim); font-size:.9rem; }
+  .card{ background:var(--bg-raise); border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:20px; }
+  label{ display:block; font-size:.8rem; color:var(--ink-dim); margin-bottom:4px; }
+  input,select,textarea{ width:100%; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:4px; padding:9px 10px; font:inherit; }
+  input[type=checkbox]{ width:auto; margin-right:8px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+  .check{ display:flex; align-items:center; padding-top:22px; } .check label{ margin:0; color:var(--ink); }
+  button{ background:var(--green-bright); color:#06110b; border:0; border-radius:4px; padding:10px 18px; font:inherit; font-weight:700; cursor:pointer; }
+  button.ghost{ background:transparent; color:var(--ink); border:1px solid var(--line); }
+  button:disabled{ opacity:.5; cursor:default; }
+  .compare{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px; }
+  .box{ border:1px solid var(--line); border-radius:6px; padding:12px; }
+  .box .n{ font-size:1.5rem; font-weight:700; } .box .l{ font-size:.8rem; color:var(--ink-dim); }
+  table{ width:100%; border-collapse:collapse; font-size:.9rem; }
+  th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ color:var(--ink-dim); font-weight:600; font-size:.8rem; }
+  tr.row{ cursor:pointer; } tr.row:hover{ background:var(--bg-alt); }
+  .tag{ display:inline-block; padding:2px 8px; border-radius:10px; font-size:.75rem; border:1px solid var(--line); }
+  .tag.won{ color:var(--green-bright); border-color:var(--green-bright); } .tag.lost{ color:var(--bad); border-color:var(--bad); }
+  .msg{ margin-top:10px; font-size:.9rem; } .err{ color:var(--bad); }
+  .scroll{ overflow-x:auto; }
+  .hidden{ display:none; }
+  .detail td{ background:var(--bg-alt); }
+  @media(max-width:600px){ .wrap{ padding:16px 16px 60px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="loginView" class="hidden">
+    <h1>Select Greens bids</h1>
+    <p class="dim" style="margin:8px 0 20px;">Staff only. Enter your email and we'll send you a sign-in link.</p>
+    <div class="card" style="max-width:420px;">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" autocomplete="email">
+      <button id="loginBtn" style="margin-top:12px;">Send sign-in link</button>
+      <p id="loginMsg" class="msg"></p>
+    </div>
+  </div>
+
+  <div id="appView" class="hidden">
+    <div class="top">
+      <div><h1>Select Greens bids</h1><div class="dim" id="who"></div></div>
+      <button class="ghost" id="logoutBtn">Sign out</button>
+    </div>
+    <div id="notStaff" class="card hidden">
+      <p><strong>This email isn't on the staff list.</strong></p>
+      <p class="dim">Ask the owner to add it, then sign in again.</p>
+    </div>
+
+    <div id="staffOnly" class="hidden">
+      <div class="card">
+        <h2>New bid</h2>
+        <form id="bidForm">
+          <div class="grid">
+            <div><label>Customer name</label><input id="f_name"></div>
+            <div><label>Phone or email</label><input id="f_contact"></div>
+            <div><label>Address</label><input id="f_address"></div>
+            <div><label>Project type</label>
+              <select id="f_type"><option value="lawn">Residential turf</option><option value="green">Putting green</option></select></div>
+            <div><label>Turf tier</label><select id="f_tier"></select></div>
+            <div><label>Square feet</label><input id="f_sqft" type="number" min="1" value="500"></div>
+            <div><label>Road base</label>
+              <select id="f_base"><option value="standard">Standard (3")</option><option value="thick">Thick (4")</option><option value="max">Max (5"+)</option></select></div>
+            <div><label>Edging</label>
+              <select id="f_edging"><option value="none">None</option><option value="wood">Wood</option><option value="metal">Metal</option><option value="paver">Paver</option></select></div>
+            <div><label>Edging length (ft, blank = estimate)</label><input id="f_edgingft" type="number" min="0"></div>
+            <div><label>Slope</label><select id="f_slope"><option value="mild">Flat or mild</option><option value="steep">Steep</option></select></div>
+            <div class="check"><input type="checkbox" id="f_sod"><label for="f_sod">Sod removal</label></div>
+            <div class="check"><input type="checkbox" id="f_colored"><label for="f_colored">Colored infill</label></div>
+            <div class="check"><input type="checkbox" id="f_clay"><label for="f_clay">Clay soil</label></div>
+            <div class="check"><input type="checkbox" id="f_barrow"><label for="f_barrow">Wheelbarrow-only access</label></div>
+            <div class="check"><input type="checkbox" id="f_cup"><label for="f_cup">Cup + fringe package (green)</label></div>
+            <div><label>Status</label>
+              <select id="f_status"><option value="sent">Sent</option><option value="won">Won</option><option value="lost">Lost</option></select></div>
+          </div>
+          <div style="margin-top:12px;"><label>Notes</label><textarea id="f_notes" rows="2"></textarea></div>
+
+          <div class="compare">
+            <div class="box"><div class="l">Model price</div><div class="n" id="c_model">—</div><div class="l" id="c_range"></div></div>
+            <div class="box"><div class="l">Bidder's final price</div>
+              <input id="f_price" type="number" min="0" step="1" placeholder="Enter the bidder's price" required></div>
+            <div class="box"><div class="l">Model vs. bidder</div><div class="n" id="c_diff">—</div><div class="l" id="c_note"></div></div>
+          </div>
+          <details style="margin-top:14px;"><summary class="dim" style="cursor:pointer;">Model cost lines</summary>
+            <div class="scroll"><table style="margin-top:8px;"><thead><tr><th>Line</th><th>Cost</th><th>Price</th></tr></thead><tbody id="c_lines"></tbody></table></div>
+          </details>
+          <button type="submit" id="saveBtn" style="margin-top:16px;">Save bid</button>
+          <p id="saveMsg" class="msg"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Bids</h2>
+        <div class="scroll"><table>
+          <thead><tr><th>Date</th><th>Customer</th><th>Type</th><th>Sq ft</th><th>Bidder</th><th>Model range</th><th>Diff</th><th>Status</th></tr></thead>
+          <tbody id="bidRows"></tbody>
+        </table></div>
+        <p id="listMsg" class="dim msg"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="bids-model.js"></script>
+<script>
+(function () {
+  const SUPABASE_URL = 'https://tpwfpygiugwravnvnpuf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_u-FD0MyPJk9AOVksBi6BDA__RyAYa7p'; // public key; row-level security protects the data
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const money = (n) => '$' + Math.round(n).toLocaleString('en-US');
+  const tiers = {
+    lawn: [['standard', 'Everyday: Trek 50'], ['premium', 'Elevated: Arizona Pro'], ['platinum', 'Top-Tier: Natural Fusion Patriot']],
+    green: [['standard', 'Standard Green'], ['premium', 'Premium Green']]
+  };
+  let rates = null, current = null, bids = [], lastUserEmail = '';
+
+  function el(tag, text, cls) { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+  function show(id, on) { $(id).classList.toggle('hidden', !on); }
+
+  // ---------- sign in ----------
+  $('loginBtn').addEventListener('click', async () => {
+    const email = $('loginEmail').value.trim();
+    if (!email) return;
+    $('loginBtn').disabled = true;
+    const { error } = await db.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } });
+    $('loginMsg').className = 'msg' + (error ? ' err' : '');
+    $('loginMsg').textContent = error ? 'Could not send the link: ' + error.message : 'Check your email for the sign-in link, then come back to this page.';
+    $('loginBtn').disabled = false;
+  });
+  $('logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); location.reload(); });
+
+  async function start(session) {
+    if (!session) { show('loginView', true); show('appView', false); return; }
+    show('loginView', false); show('appView', true);
+    $('who').textContent = 'Signed in as ' + session.user.email;
+    const r = await db.from('rates').select('key,value');
+    if (r.error || !r.data || r.data.length === 0) { show('notStaff', true); show('staffOnly', false); return; }
+    show('notStaff', false); show('staffOnly', true);
+    rates = SGBids.ratesFromRows(r.data);
+    populateTiers(); recalc(); loadBids();
+  }
+
+  // ---------- form ----------
+  function populateTiers() {
+    const t = $('f_type').value;
+    $('f_tier').innerHTML = '';
+    tiers[t].forEach((o) => { const opt = el('option', o[1]); opt.value = o[0]; $('f_tier').appendChild(opt); });
+  }
+  function config() {
+    return {
+      type: $('f_type').value, tier: $('f_tier').value, sqft: parseInt($('f_sqft').value, 10) || 0, base: $('f_base').value,
+      sodCut: $('f_sod').checked, edging: $('f_edging').value, edgingFeet: parseInt($('f_edgingft').value, 10) || 0,
+      colored: $('f_colored').checked, slope: $('f_slope').value, clay: $('f_clay').checked,
+      wheelbarrow: $('f_barrow').checked, cup: $('f_cup').checked
+    };
+  }
+  function recalc() {
+    const cfg = config();
+    if (!rates || cfg.sqft <= 0) { current = null; return; }
+    current = SGBids.priceBid(cfg, rates);
+    $('c_model').textContent = money(current.modelPrice);
+    $('c_range').textContent = 'Range ' + money(current.low) + ' to ' + money(current.high) + (current.minimumApplied ? ' (minimum applies)' : '');
+    const body = $('c_lines'); body.innerHTML = '';
+    current.lines.forEach((l) => {
+      const tr = el('tr');
+      tr.appendChild(el('td', l.description));
+      tr.appendChild(el('td', l.cost == null ? '' : money(l.cost)));
+      tr.appendChild(el('td', money(l.price)));
+      body.appendChild(tr);
+    });
+    const tr = el('tr'); tr.appendChild(el('td', 'Total cost / model price')); tr.appendChild(el('td', money(current.costTotal))); tr.appendChild(el('td', money(current.modelPrice)));
+    tr.style.fontWeight = '700'; body.appendChild(tr);
+    diff();
+  }
+  function diff() {
+    const price = parseFloat($('f_price').value);
+    if (!current || !(price > 0)) { $('c_diff').textContent = '—'; $('c_note').textContent = ''; return; }
+    const d = (current.modelPrice - price) / price * 100;
+    $('c_diff').textContent = (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+    const inRange = price >= current.low && price <= current.high;
+    $('c_note').textContent = (inRange ? 'Bidder is inside the model range' : 'Bidder is outside the model range');
+  }
+  ['f_type'].forEach((id) => $(id).addEventListener('change', () => { populateTiers(); recalc(); }));
+  ['f_tier', 'f_sqft', 'f_base', 'f_edging', 'f_edgingft', 'f_slope', 'f_sod', 'f_colored', 'f_clay', 'f_barrow', 'f_cup']
+    .forEach((id) => $(id).addEventListener('input', recalc));
+  $('f_price').addEventListener('input', diff);
+
+  $('bidForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!current) return;
+    const cfg = config(), price = parseFloat($('f_price').value);
+    $('saveBtn').disabled = true; $('saveMsg').className = 'msg'; $('saveMsg').textContent = 'Saving…';
+    const row = {
+      customer_name: $('f_name').value.trim() || null, customer_contact: $('f_contact').value.trim() || null,
+      address: $('f_address').value.trim() || null, project_type: cfg.type, sqft: cfg.sqft, turf_tier: cfg.tier,
+      base_tier: cfg.base, sod_cut: cfg.sodCut, edging: cfg.edging, edging_ft: cfg.edging === 'none' ? null : (cfg.edgingFeet || current.edgingFeet),
+      colored_infill: cfg.colored, slope: cfg.slope, clay: cfg.clay, wheelbarrow: cfg.wheelbarrow, cup_package: cfg.cup,
+      notes: $('f_notes').value.trim() || null, cost_total: current.costTotal, margin: current.margin, bid_price: price,
+      model_low: current.low, model_high: current.high, status: $('f_status').value
+    };
+    const ins = await db.from('bids').insert(row).select('id').single();
+    if (ins.error) { fail(ins.error.message); return; }
+    const lines = current.lines.map((l) => Object.assign({ bid_id: ins.data.id }, l));
+    const li = await db.from('bid_lines').insert(lines);
+    if (li.error) { fail('The bid saved but its lines did not: ' + li.error.message); return; }
+    $('saveMsg').textContent = 'Saved.';
+    $('bidForm').reset(); populateTiers(); recalc();
+    $('saveBtn').disabled = false;
+    loadBids();
+  });
+  function fail(msg) { $('saveMsg').className = 'msg err'; $('saveMsg').textContent = 'Could not save: ' + msg; $('saveBtn').disabled = false; }
+
+  // ---------- list ----------
+  async function loadBids() {
+    const r = await db.from('bids').select('*, installs(*)').order('created_at', { ascending: false });
+    if (r.error) { $('listMsg').className = 'msg err'; $('listMsg').textContent = r.error.message; return; }
+    bids = r.data; renderBids();
+  }
+  function renderBids() {
+    const body = $('bidRows'); body.innerHTML = '';
+    $('listMsg').textContent = bids.length ? '' : 'No bids yet.';
+    bids.forEach((b) => {
+      const tr = el('tr', null, 'row');
+      const d = b.bid_price ? ((((b.model_low + b.model_high) / 2) - b.bid_price) / b.bid_price * 100) : null;
+      [new Date(b.created_at).toLocaleDateString(), b.customer_name || '(no name)', b.project_type === 'green' ? 'Green' : 'Turf',
+        b.sqft, money(b.bid_price), money(b.model_low) + '–' + Number(b.model_high).toLocaleString('en-US'),
+        d == null ? '' : (d >= 0 ? '+' : '') + d.toFixed(0) + '%'].forEach((v) => tr.appendChild(el('td', v)));
+      const st = el('td'); st.appendChild(el('span', b.status, 'tag ' + b.status)); tr.appendChild(st);
+      tr.addEventListener('click', () => toggleDetail(tr, b));
+      body.appendChild(tr);
+    });
+  }
+  async function toggleDetail(tr, b) {
+    const next = tr.nextSibling;
+    if (next && next.classList && next.classList.contains('detail')) { next.remove(); return; }
+    const dtr = el('tr', null, 'detail'); const td = el('td'); td.colSpan = 8; dtr.appendChild(td);
+    tr.after(dtr);
+    td.appendChild(el('p', [b.address, b.customer_contact, b.notes].filter(Boolean).join(' · ') || 'No contact details or notes.', 'dim'));
+    const lr = await db.from('bid_lines').select('*').eq('bid_id', b.id);
+    const t = el('table'); t.style.marginTop = '8px';
+    const hr = el('tr'); ['Line', 'Cost', 'Price'].forEach((h) => hr.appendChild(el('th', h))); t.appendChild(hr);
+    (lr.data || []).forEach((l) => { const r = el('tr'); r.appendChild(el('td', l.description)); r.appendChild(el('td', l.cost == null ? '' : money(l.cost))); r.appendChild(el('td', money(l.price))); t.appendChild(r); });
+    td.appendChild(t);
+
+    const actions = el('div'); actions.style.cssText = 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;';
+    ['sent', 'won', 'lost'].forEach((s) => {
+      if (s === b.status) return;
+      const btn = el('button', 'Mark ' + s, 'ghost');
+      btn.addEventListener('click', async (ev) => { ev.stopPropagation(); await db.from('bids').update({ status: s }).eq('id', b.id); loadBids(); });
+      actions.appendChild(btn);
+    });
+    td.appendChild(actions);
+
+    if (b.status === 'won') {
+      const inst = (b.installs && (Array.isArray(b.installs) ? b.installs[0] : b.installs)) || {};
+      const form = el('div'); form.style.marginTop = '14px';
+      form.appendChild(el('strong', 'Install'));
+      const g = el('div', null, 'grid'); g.style.marginTop = '8px';
+      const fields = [['scheduled_on', 'Scheduled', 'date'], ['completed_on', 'Completed', 'date'], ['crew_size', 'Crew size', 'number'],
+        ['days', 'Days', 'number'], ['labor_hours', 'Labor hours', 'number'], ['actual_cost', 'Actual cost ($)', 'number'], ['notes', 'Notes', 'text']];
+      const inputs = {};
+      fields.forEach((f) => {
+        const w = el('div'); w.appendChild(el('label', f[1])); const i = el('input'); i.type = f[2]; if (f[2] === 'number') i.step = 'any';
+        i.value = inst[f[0]] == null ? '' : inst[f[0]]; inputs[f[0]] = i; w.appendChild(i); g.appendChild(w);
+      });
+      form.appendChild(g);
+      const save = el('button', 'Save install'); save.style.marginTop = '10px';
+      const msg = el('p', '', 'msg');
+      save.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const row = { bid_id: b.id };
+        fields.forEach((f) => { const v = inputs[f[0]].value.trim(); row[f[0]] = v === '' ? null : (f[2] === 'number' ? Number(v) : v); });
+        const r = await db.from('installs').upsert(row, { onConflict: 'bid_id' });
+        msg.className = 'msg' + (r.error ? ' err' : ''); msg.textContent = r.error ? r.error.message : 'Saved.';
+      });
+      form.appendChild(save); form.appendChild(msg); td.appendChild(form);
+    }
+  }
+
+  db.auth.onAuthStateChange((event, session) => {
+    const email = session && session.user ? session.user.email : '';
+    if (event === 'INITIAL_SESSION' || (event === 'SIGNED_IN' && email !== lastUserEmail) || event === 'SIGNED_OUT') {
+      lastUserEmail = email; start(session);
+    }
+  });
+})();
+</script>
+</body>
+</html>
